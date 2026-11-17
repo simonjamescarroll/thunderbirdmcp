@@ -1,6 +1,6 @@
 # Thunderbird email MCP: frequently asked questions
 
-These answers describe **jamessi1989/thunderbirdmcp**, the MIT-licensed Python
+These answers describe **simonjamescarroll/thunderbirdmcp**, the MIT-licensed Python
 mail MCP and `tbmail` terminal client. Start with the
 [installation guide](installation.md), [synthetic demo](demo.md), or
 [workflow reference](workflows.md). The [changelog](../CHANGELOG.md) identifies
@@ -131,7 +131,7 @@ fastest or “best” MCP. The included synthetic benchmark is a regression test
 
 ## Is this the same project as U-C4N/Thunderbird-MCP?
 
-No. This repository is **jamessi1989/thunderbirdmcp**, importing
+No. This repository is **simonjamescarroll/thunderbirdmcp**, importing
 `thunderbird_mcp`. U-C4N's native bridge imports `tbmcp` and is an optional
 companion. Both use the distribution name `thunderbird-mcp`; follow the explicit
 GitHub checkout/release instructions and keep their environments separate.
@@ -141,6 +141,6 @@ Neither project is implied to be an official Mozilla or AI-client product.
 
 The source is available under [MIT](../LICENSE). Your mail provider, hosting or
 AI model account can have its own charges. Report reproducible issues through
-the [GitHub issue forms](https://github.com/jamessi1989/thunderbirdmcp/issues/new/choose),
+the [GitHub issue forms](https://github.com/simonjamescarroll/thunderbirdmcp/issues/new/choose),
 using synthetic examples and sanitized errors. Never attach private mailbox
 databases, tokens, client configuration or real mail to a public issue.

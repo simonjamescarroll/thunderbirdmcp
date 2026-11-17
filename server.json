@@ -1,0 +1,24 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.simonjamescarroll/thunderbirdmcp",
+  "title": "Thunderbird MCP",
+  "description": "Search, read, draft, send and organize Thunderbird, IMAP, Gmail and Outlook mail from AI agents.",
+  "repository": {
+    "url": "https://github.com/simonjamescarroll/thunderbirdmcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/simonjamescarroll/thunderbirdmcp#readme",
+  "version": "0.4.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "thunderbird-mcp",
+      "version": "0.4.1",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

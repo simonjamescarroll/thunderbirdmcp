@@ -14,7 +14,7 @@ import tempfile
 from datetime import datetime, timezone
 
 
-DEFAULT_REPOSITORY = "jamessi1989/thunderbirdmcp"
+DEFAULT_REPOSITORY = "simonjamescarroll/thunderbirdmcp"
 
 
 def github(endpoint: str) -> object:

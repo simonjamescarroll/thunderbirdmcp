@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.1 — 2026-11-17
+
+Distribution only; the mail server and its 56 tools are unchanged from 0.4.0.
+
+### Added
+
+- Published on [PyPI](https://pypi.org/project/thunderbird-mcp/) as `thunderbird-mcp`:
+  `uv tool install --python 3.12 thunderbird-mcp`, then `thunderbird-mcp-setup --apply`.
+- Listed in the official [MCP Registry](https://registry.modelcontextprotocol.io/) as
+  `io.github.simonjamescarroll/thunderbirdmcp` (`server.json`).
+- Tag-driven release workflow: tests and a clean wheel install, PyPI trusted publishing,
+  MCP Registry publication through GitHub OIDC, and a GitHub release with `SHA256SUMS`.
+
+### Changed
+
+- Project links follow the GitHub owner rename to `simonjamescarroll`.
+
 ## 0.4.0 — 2026-11-02
 
 This release implements the twenty-item [roadmap](ROADMAP.md), with **56 mail
@@ -112,7 +129,7 @@ They do not establish provider authentication or an actual desktop installation.
 The v0.3.1 wheel passed both fresh-venv and `uv tool` installation checks on
 Linux/Python 3.11, including client setup and an actual MCP search/read/reference,
 attachment-search, and unsent-draft workflow with synthetic mail.
-The [CI workflow](https://github.com/jamessi1989/thunderbirdmcp/actions/workflows/checks.yml)
+The [CI workflow](https://github.com/simonjamescarroll/thunderbirdmcp/actions/workflows/checks.yml)
 runs synthetic tests, the keyword benchmark, builds, and clean-install checks on
 Linux and macOS. The release's CI result is separate from the v0.3.0 results
 recorded below.
@@ -157,7 +174,7 @@ are opt-in checks with model accounts, not part of synthetic CI.
 
 - The 162-test synthetic suite, keyword benchmark, and package builds passed
   the Linux Python 3.10–3.12 and macOS Python 3.12 matrix in
-  [GitHub Actions](https://github.com/jamessi1989/thunderbirdmcp/actions/runs/41479433495).
+  [GitHub Actions](https://github.com/simonjamescarroll/thunderbirdmcp/actions/runs/41479433495).
 - Maintainer checks on Linux exercised actual Codex, Claude Code, and OpenCode
   with GLM tool calls against synthetic mail, existing-session reconnects,
   readonly live IMAP access with unchanged read flags, and attachment retrieval.

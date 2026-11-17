@@ -1,6 +1,6 @@
 # Track repository interest
 
-Maintainers can view [GitHub Insights → Traffic](https://github.com/jamessi1989/thunderbirdmcp/graphs/traffic)
+Maintainers can view [GitHub Insights → Traffic](https://github.com/simonjamescarroll/thunderbirdmcp/graphs/traffic)
 for page views, unique visitors, full clones, referral sites and popular pages.
 GitHub exposes a rolling 14-day traffic window, with UTC dates. Views/clones
 update hourly; referral and popular-page summaries update daily. See
