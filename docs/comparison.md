@@ -7,7 +7,7 @@ reviewed release, not the current tool catalogue. Competitor snapshots have not
 been rerun or refreshed for this implementation update.
 
 Reviewed **2 November 2026**. This compares our published
-[v0.3.1 release](https://github.com/jamessi1989/thunderbirdmcp/releases/tag/v0.3.1)
+[v0.3.1 release](https://github.com/simonjamescarroll/thunderbirdmcp/releases/tag/v0.3.1)
 with five public projects. Our baseline has **23 tools**. An unreleased
 `save_draft_to_thunderbird` change was present locally during this review; it is
 treated as work in progress, not as part of that release or as two-way draft sync.
@@ -24,7 +24,7 @@ ranking. See the [missing-feature roadmap](../ROADMAP.md) for proposed prioritie
 
 | Project | Source snapshot | Approach and relevant scope |
 | --- | --- | --- |
-| [This project](https://github.com/jamessi1989/thunderbirdmcp) | [v0.3.1 / `99cabc2`](https://github.com/jamessi1989/thunderbirdmcp/tree/99cabc2fb2c0dc3037de38a6f67f4d635e054946) | Independent downloaded-mbox index plus direct IMAP/SMTP. Local semantic/document search, references, account selection, local drafts, sending, and move/undo. [Tool interface][ours-tools] |
+| [This project](https://github.com/simonjamescarroll/thunderbirdmcp) | [v0.3.1 / `99cabc2`](https://github.com/simonjamescarroll/thunderbirdmcp/tree/99cabc2fb2c0dc3037de38a6f67f4d635e054946) | Independent downloaded-mbox index plus direct IMAP/SMTP. Local semantic/document search, references, account selection, local drafts, sending, and move/undo. [Tool interface][ours-tools] |
 | [U-C4N/Thunderbird-MCP](https://github.com/U-C4N/Thunderbird-MCP) | [`cddefb8`](https://github.com/U-C4N/Thunderbird-MCP/commit/cddefb8010fa39ac85bf4787c3449dca45de2770), not archived | Thunderbird add-on and broker; native mail, saved drafts, contacts, calendars, filters and settings. Current README lists 124 tools; the About description still says 112. [Architecture][U-architecture], [catalogue][U-readme] |
 | [marlinjai/email-mcp](https://github.com/marlinjai/email-mcp) | [`3261b81`](https://github.com/marlinjai/email-mcp/commit/3261b81221b395801cff30fa7a18484f80fd7b1b), not archived | Gmail API, Microsoft Graph and IMAP backends, multiple accounts, browser enrollment, server drafts and composition. Its catalogue advertises 36 tools. [README][M-readme], [sending tools][M-sending] |
 | [codefuturist/email-mcp](https://github.com/codefuturist/email-mcp) | [`7d31cd5`](https://github.com/codefuturist/email-mcp/commit/7d31cd5eac8788bd69237c18e3ee1e1fe2816ab7), not archived | IMAP/SMTP, SQLite caching, mailbox operations, scheduling, watcher notifications, and local or HTTP transport. [Registration][C-tools], [cache][C-cache], [HTTP server][C-http] |
@@ -136,10 +136,10 @@ interchangeable with that transport; a consent-wizard toggle alone cannot
 provide API-only read/send permissions. [Google XOAUTH2 scopes](https://developers.google.com/workspace/gmail/imap/xoauth2-protocol#oauth_20_scopes),
 [Gmail API scopes](https://developers.google.com/workspace/gmail/api/auth/scopes).
 
-[ours-tools]: https://github.com/jamessi1989/thunderbirdmcp/blob/v0.3.1/thunderbird_mcp/server.py
-[ours-search]: https://github.com/jamessi1989/thunderbirdmcp/blob/v0.3.1/thunderbird_mcp/search.py
-[ours-outgoing]: https://github.com/jamessi1989/thunderbirdmcp/blob/v0.3.1/thunderbird_mcp/outgoing.py
-[ours-oauth]: https://github.com/jamessi1989/thunderbirdmcp/blob/v0.3.1/thunderbird_mcp/oauth.py
+[ours-tools]: https://github.com/simonjamescarroll/thunderbirdmcp/blob/v0.3.1/thunderbird_mcp/server.py
+[ours-search]: https://github.com/simonjamescarroll/thunderbirdmcp/blob/v0.3.1/thunderbird_mcp/search.py
+[ours-outgoing]: https://github.com/simonjamescarroll/thunderbirdmcp/blob/v0.3.1/thunderbird_mcp/outgoing.py
+[ours-oauth]: https://github.com/simonjamescarroll/thunderbirdmcp/blob/v0.3.1/thunderbird_mcp/oauth.py
 [U-readme]: https://github.com/U-C4N/Thunderbird-MCP/blob/cddefb8010fa39ac85bf4787c3449dca45de2770/README.md
 [U-architecture]: https://github.com/U-C4N/Thunderbird-MCP/blob/cddefb8010fa39ac85bf4787c3449dca45de2770/docs/ARCHITECTURE.md
 [U-workflows]: https://github.com/U-C4N/Thunderbird-MCP/blob/cddefb8010fa39ac85bf4787c3449dca45de2770/docs/WORKFLOWS-1.4.md

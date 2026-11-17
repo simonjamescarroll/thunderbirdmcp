@@ -1,6 +1,6 @@
 # Thunderbird MCP documentation
 
-Documentation for **[jamessi1989/thunderbirdmcp](https://github.com/jamessi1989/thunderbirdmcp)**:
+Documentation for **[simonjamescarroll/thunderbirdmcp](https://github.com/simonjamescarroll/thunderbirdmcp)**:
 an MIT-licensed Python email MCP server and terminal client for Thunderbird mail,
 Codex, Claude Code, OpenCode and Terminalman.
 
@@ -19,7 +19,7 @@ Codex, Claude Code, OpenCode and Terminalman.
 | Preserve GitHub traffic and release download history | [Repository traffic](repository-traffic.md) |
 
 Download published artifacts from
-[GitHub Releases](https://github.com/jamessi1989/thunderbirdmcp/releases).
+[GitHub Releases](https://github.com/simonjamescarroll/thunderbirdmcp/releases).
 The active tool schemas are available through `tbmail tools --json`; every MCP
 tool also has a terminal route through `tbmail call`. Documentation describes
 capabilities and their boundaries separately from synthetic, provider and

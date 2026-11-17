@@ -1,0 +1,145 @@
+name: Release
+
+# Push a tag vX.Y.Z whose version matches pyproject.toml and server.json.
+# PyPI uses trusted publishing (no stored token) through the `pypi` environment;
+# the MCP Registry authenticates with this repository's GitHub OIDC identity.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: '3.12'
+      - name: Tag, package and registry versions agree
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")"
+          srv="$(jq -r .version server.json)"
+          srv_pkg="$(jq -r '.packages[0].version' server.json)"
+          echo "tag=$tag pyproject=$pkg server.json=$srv/$srv_pkg"
+          if [ "$tag" != "$pkg" ] || [ "$tag" != "$srv" ] || [ "$tag" != "$srv_pkg" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pyproject.toml and server.json versions"
+            exit 1
+          fi
+      - name: README carries the MCP Registry ownership marker
+        run: grep -q "mcp-name: $(jq -r .name server.json)" README.md
+      - run: uv sync --locked
+      - name: Synthetic unit and MCP protocol tests
+        run: uv run --locked python -m unittest discover -s tests -v
+      - name: Build distributable package
+        run: uv build
+      - name: Export locked installation constraints
+        run: uv export --locked --no-dev --no-emit-project --format requirements.txt --output-file "${RUNNER_TEMP}/thunderbird-constraints.txt"
+      - name: Install and exercise the wheel in a clean environment
+        run: uv run --locked python scripts/test_install.py --wheel dist/*.whl --constraints "${RUNNER_TEMP}/thunderbird-constraints.txt" --json
+      - name: Checksums
+        run: (cd dist && sha256sum -- * > "${RUNNER_TEMP}/SHA256SUMS") && mkdir sums && mv "${RUNNER_TEMP}/SHA256SUMS" sums/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sums
+          path: sums/SHA256SUMS
+          if-no-files-found: error
+
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/thunderbird-mcp/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+
+  mcp-registry:
+    needs: pypi
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      MCP_PUBLISHER_VERSION: v1.8.9
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
+      - name: Download and verify mcp-publisher
+        run: |
+          set -euo pipefail
+          archive="mcp-publisher_linux_amd64.tar.gz"
+          base_url="https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}"
+          curl --fail --location --silent --show-error --output "$archive" "$base_url/$archive"
+          curl --fail --location --silent --show-error --output "$archive.sigstore.json" "$base_url/$archive.sigstore.json"
+          cosign verify-blob \
+            --bundle "$archive.sigstore.json" \
+            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release.yml@refs/tags/${MCP_PUBLISHER_VERSION}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "$archive"
+          tar xzf "$archive" mcp-publisher
+          rm -f "$archive" "$archive.sigstore.json"
+      - name: Wait for the release on PyPI
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          for _ in $(seq 1 30); do
+            if curl --fail --silent --output /dev/null "https://pypi.org/pypi/thunderbird-mcp/${version}/json"; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::thunderbird-mcp ${version} did not appear on PyPI within five minutes"
+          exit 1
+      - run: ./mcp-publisher validate server.json
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish
+
+  github-release:
+    needs: pypi
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist/
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sums
+          path: sums/
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '$0 ~ "^## " v "( |$)" {on=1; next} /^## / && on {exit} on' CHANGELOG.md > notes.md
+          test -s notes.md || echo "See CHANGELOG.md." > notes.md
+          gh release create "$GITHUB_REF_NAME" dist/* sums/SHA256SUMS \
+            --repo "$GITHUB_REPOSITORY" --title "Thunderbird MCP $version" --notes-file notes.md --verify-tag

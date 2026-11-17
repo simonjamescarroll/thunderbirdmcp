@@ -2339,7 +2339,7 @@ wheels = [
 
 [[package]]
 name = "thunderbird-mcp"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "defusedxml", marker = "python_full_version < '3.14' or platform_machine != 'x86_64' or sys_platform != 'darwin'" },

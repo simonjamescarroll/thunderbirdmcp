@@ -5,14 +5,16 @@
 Thunderbird MCP is an open-source Python **email MCP server** and `tbmail` CLI.
 It combines local mail and attachment search with live IMAP/SMTP workflows,
 native Gmail API and Microsoft Graph adapters, and reusable mail references.
-The canonical project is **[jamessi1989/thunderbirdmcp](https://github.com/jamessi1989/thunderbirdmcp)**,
+The canonical project is **[simonjamescarroll/thunderbirdmcp](https://github.com/simonjamescarroll/thunderbirdmcp)**,
 released under MIT.
 
-[![Mail MCP checks](https://github.com/jamessi1989/thunderbirdmcp/actions/workflows/checks.yml/badge.svg)](https://github.com/jamessi1989/thunderbirdmcp/actions/workflows/checks.yml)
+<!-- mcp-name: io.github.simonjamescarroll/thunderbirdmcp -->
+
+[![Mail MCP checks](https://github.com/simonjamescarroll/thunderbirdmcp/actions/workflows/checks.yml/badge.svg)](https://github.com/simonjamescarroll/thunderbirdmcp/actions/workflows/checks.yml)
 [Quick start](#start-using-it) · [Demo](docs/demo.md) · [Installation guide](docs/installation.md) ·
 [Workflows](docs/workflows.md) · [FAQ](docs/faq.md) · [Comparison](docs/comparison.md) ·
-[Releases](https://github.com/jamessi1989/thunderbirdmcp/releases) ·
-[Report your installation](https://github.com/jamessi1989/thunderbirdmcp/issues/new?template=installation-feedback.yml)
+[Releases](https://github.com/simonjamescarroll/thunderbirdmcp/releases) ·
+[Report your installation](https://github.com/simonjamescarroll/thunderbirdmcp/issues/new?template=installation-feedback.yml)
 
 Work with your mail from **Claude Code, Codex, OpenCode (including GLM),
 Terminalman**, or a normal shell. Available tools depend on the configured
@@ -34,15 +36,25 @@ that client's model provider. The demo below
 shows one workflow: finding a PDF invoice, reusing its reference, and preparing
 an unsent reply.
 
-![Synthetic demo: search an invoice attachment, reuse a mail reference, and prepare an unsent reply](docs/demo.svg)
+![Synthetic demo: search an invoice attachment, reuse a mail reference, and prepare an unsent reply](https://raw.githubusercontent.com/simonjamescarroll/thunderbirdmcp/main/docs/demo.svg)
 
 ## Start using it
+
+Install from [PyPI](https://pypi.org/project/thunderbird-mcp/) and register the MCP
+with your installed clients:
+
+```bash
+uv tool install --python 3.12 thunderbird-mcp
+thunderbird-mcp-setup --apply
+```
+
+To try the synthetic demo or work on the code, use a checkout instead.
 
 You need Python 3.10+ and [uv](https://docs.astral.sh/uv/getting-started/installation/).
 Clone the project and try the demo before connecting your mailbox:
 
 ```bash
-git clone https://github.com/jamessi1989/thunderbirdmcp.git ~/projects/thunderbirdmcp
+git clone https://github.com/simonjamescarroll/thunderbirdmcp.git ~/projects/thunderbirdmcp
 cd ~/projects/thunderbirdmcp
 uv sync --locked
 uv run python scripts/demo.py
@@ -58,7 +70,7 @@ uv run thunderbird-mcp-setup --apply
 ```
 
 The [installation guide](docs/installation.md) covers credentials, custom profiles,
-installing a release wheel without a checkout, and troubleshooting. Linux is the
+installing from PyPI or a release wheel without a checkout, and troubleshooting. Linux is the
 primary tested desktop; Linux and macOS run the synthetic suite and package
 installation checks in CI, with a separate native Windows installation job.
 Real provider/desktop checks and synthetic verification are reported separately.
@@ -507,7 +519,7 @@ platform. See [current workflow limits](docs/workflows.md) and the
 [native companion verification record](docs/native-integration.md#verify-the-desktop-connection).
 
 For v0.3.0, all 162 tests, the keyword benchmark, and package builds passed on
-the full matrix in [GitHub Actions](https://github.com/jamessi1989/thunderbirdmcp/actions/runs/41479433495).
+the full matrix in [GitHub Actions](https://github.com/simonjamescarroll/thunderbirdmcp/actions/runs/41479433495).
 Local verification on 2026-11-02 also covered Codex, Claude Code, and OpenCode
 with GLM calling the tools against synthetic mail, session reconnects, read-only
 live IMAP access with unchanged read flags, and attachment text retrieval.
@@ -534,7 +546,7 @@ and private SQLite files out of Git. Published tests contain synthetic mail only
 ## Feedback and contributing
 
 Installation successes and failures are both useful. Use the
-[installation feedback form](https://github.com/jamessi1989/thunderbirdmcp/issues/new?template=installation-feedback.yml)
+[installation feedback form](https://github.com/simonjamescarroll/thunderbirdmcp/issues/new?template=installation-feedback.yml)
 to share your platform, versions, and which checks worked. Independent installation
 reports are still needed; automated checks and maintainer smoke tests are tracked
 separately. See [CONTRIBUTING.md](CONTRIBUTING.md) for development and verification,

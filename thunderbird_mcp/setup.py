@@ -311,7 +311,7 @@ def build_plan(
         report["notes"].extend(notes)
     if str(bin_dir) not in os.environ.get("PATH", "").split(os.pathsep):
         report["notes"].append(f"Add {bin_dir} to PATH to run tbmail by name; MCP uses an absolute command.")
-    report["notes"].append("Reconnect or reload MCP in an existing agent session after setup; restart it if the client cannot reload. Use tbmail immediately from shell tools. See https://github.com/jamessi1989/thunderbirdmcp#reload-an-existing-session.")
+    report["notes"].append("Reconnect or reload MCP in an existing agent session after setup; restart it if the client cannot reload. Use tbmail immediately from shell tools. See https://github.com/simonjamescarroll/thunderbirdmcp#reload-an-existing-session.")
     report["change_count"] = len(changes)
     return {"report": report, "changes": changes}
 

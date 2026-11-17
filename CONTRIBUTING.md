@@ -7,7 +7,7 @@ system, Thunderbird version, and terminal client worked together.
 ## Report an installation
 
 Start with the [installation and client setup instructions](README.md#start-using-it),
-then open an [installation feedback issue](https://github.com/jamessi1989/thunderbirdmcp/issues/new?template=installation-feedback.yml).
+then open an [installation feedback issue](https://github.com/simonjamescarroll/thunderbirdmcp/issues/new?template=installation-feedback.yml).
 The [installation guide](docs/installation.md) covers source checkouts, release
 wheels, credential setup, and troubleshooting.
 Choose success, partial success, or failure, and include:
@@ -29,7 +29,7 @@ mailbox or send mail to report an installation.
 
 ## Reproduce a bug
 
-Use the [bug report form](https://github.com/jamessi1989/thunderbirdmcp/issues/new?template=bug-report.yml)
+Use the [bug report form](https://github.com/simonjamescarroll/thunderbirdmcp/issues/new?template=bug-report.yml)
 with the smallest synthetic example that demonstrates the problem. Describe the
 trigger, expected result, actual result, and software versions. For search bugs,
 include a fictional query and fictional message or attachment text. For
@@ -45,7 +45,7 @@ test messages or retrying an ambiguous delivery.
 Use Python 3.10 or later and the checked-in dependency lock:
 
 ```bash
-git clone https://github.com/jamessi1989/thunderbirdmcp.git
+git clone https://github.com/simonjamescarroll/thunderbirdmcp.git
 cd thunderbirdmcp
 uv sync --locked
 uv run python -m unittest discover -s tests -v
@@ -131,3 +131,12 @@ provider authorization still requires a separately authorized application and
 consent. No independent testers or their results are implied by the existence
 of issue templates. Refer to the [changelog](CHANGELOG.md) and linked CI runs for
 version-specific evidence.
+
+## Releasing
+
+Bump `version` in `pyproject.toml`, `uv.lock` (the `thunderbird-mcp` entry) and both
+`version` fields in `server.json`, add a `CHANGELOG.md` section headed `## X.Y.Z — date`,
+merge, then push a tag `vX.Y.Z`. The `Release` workflow refuses mismatched versions, runs
+the tests and a clean wheel install, publishes to PyPI through trusted publishing (the
+`pypi` environment), publishes `server.json` to the MCP Registry with GitHub OIDC, and
+creates the GitHub release with the wheel, sdist and `SHA256SUMS`.

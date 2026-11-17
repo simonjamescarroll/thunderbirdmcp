@@ -37,7 +37,7 @@ Native Windows setup support is included from version 0.4.0.
 ## Install from a checkout
 
 ```bash
-git clone https://github.com/jamessi1989/thunderbirdmcp.git ~/projects/thunderbirdmcp
+git clone https://github.com/simonjamescarroll/thunderbirdmcp.git ~/projects/thunderbirdmcp
 cd ~/projects/thunderbirdmcp
 uv sync --locked
 uv run python scripts/demo.py
@@ -63,14 +63,14 @@ terminal commands. If `tbmail` is not on your shell's PATH, use
 `~/.local/bin/tbmail`, add `~/.local/bin` to PATH, or use `uv run tbmail` inside
 the checkout. MCP registrations use an absolute command and do not depend on PATH.
 
-## Install a release wheel
+## Install from PyPI
 
-A release wheel installs into a separate tool environment; it does not require
-keeping a source checkout. Version 0.4.0 is available from
-[GitHub Releases](https://github.com/jamessi1989/thunderbirdmcp/releases/tag/v0.4.0):
+The package installs into a separate tool environment; it does not require
+keeping a source checkout. Since 0.4.1 it is published on
+[PyPI](https://pypi.org/project/thunderbird-mcp/) as `thunderbird-mcp`:
 
 ```bash
-uv tool install --python 3.12 https://github.com/jamessi1989/thunderbirdmcp/releases/download/v0.4.0/thunderbird_mcp-0.4.0-py3-none-any.whl
+uv tool install --python 3.12 thunderbird-mcp
 uv tool update-shell
 ```
 
@@ -82,10 +82,12 @@ tbmail accounts
 tbmail reindex
 ```
 
-The release includes the wheel, a source distribution, and `SHA256SUMS`.
+`uv tool upgrade thunderbird-mcp` updates it later. Each
+[GitHub Release](https://github.com/simonjamescarroll/thunderbirdmcp/releases) carries
+the same wheel, a source distribution and `SHA256SUMS`; install a downloaded wheel
+with `uv tool install --python 3.12 ./thunderbird_mcp-<version>-py3-none-any.whl`.
 Dependencies are downloaded during installation. The source distribution includes
-the demo, tests, and dependency lock. This project is distributed through GitHub
-Releases; the instructions do not assume an identically named package on PyPI.
+the demo, tests, and dependency lock.
 
 ## Connect credentials and check the account
 
@@ -150,7 +152,7 @@ Credentials stay in the system keyring and are not written to those files.
 In PowerShell, after installing Python and uv:
 
 ```powershell
-git clone https://github.com/jamessi1989/thunderbirdmcp.git
+git clone https://github.com/simonjamescarroll/thunderbirdmcp.git
 Set-Location thunderbirdmcp
 uv sync --locked
 uv run thunderbird-mcp-setup --clients codex claude opencode
@@ -213,6 +215,6 @@ commands can use `--account`.
 | Private IMAP reference expires | Search live mail again after folder moves or account changes. Use local message references for durable citations. |
 
 If setup succeeds or a problem remains, file an
-[installation report](https://github.com/jamessi1989/thunderbirdmcp/issues/new?template=installation-feedback.yml).
+[installation report](https://github.com/simonjamescarroll/thunderbirdmcp/issues/new?template=installation-feedback.yml).
 Share versions, commands, and sanitized errors. Do not attach mail bodies,
 database files, credentials, client configuration files, or private profile paths.

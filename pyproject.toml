@@ -1,12 +1,12 @@
 [project]
 name = "thunderbird-mcp"
-version = "0.4.0"
+version = "0.4.1"
 description = "Thunderbird email MCP for search, attachments, drafts, sending and mailbox automation"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{name = "jamessi1989 and contributors"}]
+authors = [{name = "simonjamescarroll and contributors"}]
 keywords = ["thunderbird", "mcp", "email", "imap", "attachments", "semantic-search", "codex", "claude-code", "opencode"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -35,11 +35,11 @@ dependencies = [
 ocr = ["Pillow>=11,<13"]
 
 [project.urls]
-Homepage = "https://github.com/jamessi1989/thunderbirdmcp"
-Documentation = "https://github.com/jamessi1989/thunderbirdmcp#readme"
-Repository = "https://github.com/jamessi1989/thunderbirdmcp"
-Issues = "https://github.com/jamessi1989/thunderbirdmcp/issues"
-Changelog = "https://github.com/jamessi1989/thunderbirdmcp/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/simonjamescarroll/thunderbirdmcp"
+Documentation = "https://github.com/simonjamescarroll/thunderbirdmcp#readme"
+Repository = "https://github.com/simonjamescarroll/thunderbirdmcp"
+Issues = "https://github.com/simonjamescarroll/thunderbirdmcp/issues"
+Changelog = "https://github.com/simonjamescarroll/thunderbirdmcp/blob/main/CHANGELOG.md"
 
 [project.scripts]
 thunderbird-mcp = "thunderbird_mcp.server:main"

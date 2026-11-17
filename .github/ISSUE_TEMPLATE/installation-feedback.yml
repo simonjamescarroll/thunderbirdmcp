@@ -47,7 +47,7 @@ body:
       description: Paste the commands you ran, replacing personal paths and any secret values with placeholders.
       render: shell
       placeholder: |
-        git clone https://github.com/jamessi1989/thunderbirdmcp.git
+        git clone https://github.com/simonjamescarroll/thunderbirdmcp.git
         cd thunderbirdmcp
         uv sync --locked
         uv run thunderbird-mcp-setup --apply --clients codex
