@@ -295,7 +295,7 @@ def build_plan(
     bin_dir = _bin_dir(home, use_env)
     command = str(python) if windows else str(bin_dir / "thunderbird-mcp")
     command_args = [str(bin_dir / "thunderbird-mcp.py")] if windows else []
-    report: dict[str, Any] = {"project": str(project), "clients": [], "files": [], "notes": []}
+    report: dict[str, Any] = {"project": str(project), "python": str(python), "clients": [], "files": [], "notes": []}
     changes: list[dict] = []
 
     def add(path: Path, content: str, mode: int, kind: str) -> None:
@@ -375,20 +375,37 @@ def apply_plan(plan: dict) -> dict:
     return report
 
 
-def build_initial_index() -> dict:
-    """Build the search index once at install time, where progress is visible
-    and no MCP tool timeout applies. Later runs only parse changed folders."""
-    from . import index
-    if index.default_db_path().is_file():
-        return {"status": "exists", "path": str(index.default_db_path())}
+_INDEX_PROGRAM = """
+import json, sys
+sys.path.insert(0, sys.argv[1])
+from thunderbird_mcp import index
+try:
+    stats = index.reindex(progress=lambda line: print("  " + line, file=sys.stderr, flush=True))
+except (OSError, RuntimeError, ValueError) as error:
+    print(json.dumps({"status": "skipped", "reason": str(error)}))
+else:
+    print(json.dumps({"status": "built", "folders_indexed": stats.folders_indexed,
+                      "folders_unchanged": stats.folders_skipped,
+                      "messages_added": stats.messages_added, "seconds": stats.seconds}))
+"""
+
+
+def build_initial_index(python: Path, project: Path) -> dict:
+    """Build or refresh the index at install time, where progress is visible and
+    no MCP tool timeout applies. It runs with the registered interpreter and
+    checkout so the server finds the same database. Unchanged folders are skipped."""
+    import subprocess
+    print("Indexing Thunderbird's downloaded mail for search (first run can take a few minutes)...",
+          file=sys.stderr, flush=True)
+    completed = subprocess.run([str(python), "-c", _INDEX_PROGRAM, str(project)],
+                               stdout=subprocess.PIPE, text=True, check=False)
     try:
-        print("Building the local search index from Thunderbird's downloaded mail...", file=sys.stderr)
-        stats = index.reindex(progress=lambda line: print("  " + line, file=sys.stderr))
-    except (OSError, RuntimeError, ValueError) as error:
-        return {"status": "skipped", "reason": str(error),
-                "next": "Set TB_PROFILE to your Thunderbird profile, then run tbmail reindex."}
-    return {"status": "built", "folders": stats.folders_indexed,
-            "messages": stats.messages_added, "seconds": stats.seconds}
+        result = json.loads(completed.stdout.strip().splitlines()[-1])
+    except (IndexError, ValueError):
+        result = {"status": "failed", "reason": f"indexer exited with code {completed.returncode}"}
+    if result["status"] != "built":
+        result["next"] = "Set TB_PROFILE to your Thunderbird profile folder if needed, then run tbmail reindex."
+    return result
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -406,7 +423,7 @@ def main(argv: list[str] | None = None) -> int:
         plan = build_plan(project=args.project, home=args.home, python=args.python, clients=[] if args.clients == ["none"] else args.clients)
         report = apply_plan(plan) if args.apply else {**plan["report"], "applied": False}
         if args.apply and not args.no_index:
-            report["index"] = build_initial_index()
+            report["index"] = build_initial_index(Path(plan["report"]["python"]), Path(plan["report"]["project"]))
         print(json.dumps(report, indent=2, ensure_ascii=False))
         return 0
     except (ValueError, RuntimeError, OSError) as error:

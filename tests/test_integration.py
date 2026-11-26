@@ -156,7 +156,7 @@ command = "keep"
     def test_initial_index_is_skipped_with_guidance_when_no_profile_exists(self):
         with patch.dict(os.environ, {"TB_PROFILE": str(self.root / "missing"),
                                      "TB_MAIL_INDEX_DB": str(self.root / "index.sqlite")}):
-            result = setup.build_initial_index()
+            result = setup.build_initial_index(Path(sys.executable), Path(__file__).resolve().parents[1])
         self.assertEqual(result["status"], "skipped")
         self.assertIn("tbmail reindex", result["next"])
         self.assertFalse((self.root / "index.sqlite").exists())

@@ -142,6 +142,46 @@ class BackgroundIndexTests(unittest.TestCase):
                 self.assertEqual(refreshed["messages_added"], 0)
 
 
+class IndexRecoveryTests(unittest.TestCase):
+    def test_failed_build_is_reported_and_interrupted_build_is_marked(self):
+        import time
+        from thunderbird_mcp import index, server
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            env = {key: value for key, value in os.environ.items() if not key.startswith("TB_")}
+            env.update(TB_PROFILE=str(root / "missing"), TB_MAIL_INDEX_DB=str(root / "index.sqlite"))
+            with patch.dict(os.environ, env, clear=True), patch.dict(server._build, clear=True), \
+                    patch.object(server, "_background_builds", True):
+                self.assertEqual(server.reindex()["status"], "started")
+                for _ in range(100):
+                    if server._build.get("finished"):
+                        break
+                    time.sleep(0.02)
+                failure = server.search_email("anything", semantic=False)["error"]
+                self.assertIn("failed", failure)
+                self.assertIn("TB_PROFILE", failure)
+                self.assertIn("error", server.mail_status()["index_build"]["outcome"])
+                retried = server.reindex()
+                self.assertIn("previous_error", retried)
+
+            folder = root / "profile" / "ImapMail" / "mail.example.test"
+            folder.mkdir(parents=True)
+            box = mailbox.mbox(folder / "INBOX")
+            message = EmailMessage()
+            message["Subject"], message["Message-ID"] = "Partial", "<partial@example.test>"
+            message.set_content("body")
+            box.add(message)
+            box.close()
+            (folder / "INBOX.msf").touch()
+            database = root / "partial.sqlite"
+            with patch.object(index, "_iter_messages", side_effect=RuntimeError("interrupted")), \
+                    self.assertRaises(RuntimeError):
+                index.reindex(db_path=database, profile=root / "profile")
+            self.assertTrue(index.build_incomplete(database))
+            index.reindex(db_path=database, profile=root / "profile")
+            self.assertFalse(index.build_incomplete(database))
+
+
 class MCPProtocolTests(unittest.IsolatedAsyncioTestCase):
     async def test_profiles_hide_and_reject_disallowed_protocol_tools(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -226,7 +266,7 @@ class MCPProtocolTests(unittest.IsolatedAsyncioTestCase):
                                      "list_accounts", "get_attachment_text", "save_draft_to_thunderbird"} <= set(tools))
                     # The default agent surface is draft-only and lean.
                     self.assertFalse({"send_draft", "send_email", "move_emails", "export_attachment"} & set(tools))
-                    self.assertLessEqual(len(tools), 20)
+                    self.assertLessEqual(len(tools), 22)
                     self.assertTrue(tools["search_email"].annotations.readOnlyHint)
                     self.assertFalse(tools["save_draft_to_thunderbird"].annotations.readOnlyHint)
                     self.assertTrue(tools["save_draft_to_thunderbird"].annotations.openWorldHint)

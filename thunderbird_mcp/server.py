@@ -75,7 +75,13 @@ def mail_status(check_network: bool = False, account: str | None = None) -> dict
             finally:
                 conn.close()
         return result
-    return _status.mail_status(check_network, account=account)
+    result = _status.mail_status(check_network, account=account)
+    with _build_lock:
+        if _build:
+            result["index_build"] = {key: _build[key] for key in
+                                     ("started", "finished", "folders_started", "folders_total", "outcome")
+                                     if key in _build}
+    return result
 
 
 @mcp.tool(annotations=READ_LOCAL)
@@ -117,9 +123,8 @@ def search_email(
     """
     building = _index_build_status()
     if not _index.default_db_path().is_file():
-        return {"error": building["message"] if building else
-                "Index not built yet. Call reindex to build it in the background, "
-                "or run `tbmail reindex` in a terminal.", "results": [], "count": 0}
+        return {"error": building["message"] if building else _unbuilt_index_message(),
+                "results": [], "count": 0}
     if not 1 <= limit <= 100:
         raise ValueError("limit must be between 1 and 100")
     # tbmail calls tools directly, without main()'s MCP-startup migration.
@@ -138,6 +143,9 @@ def search_email(
                 "diagnostics": getattr(results, "diagnostics", {})}
     if building:
         response["notice"] = building["message"]
+    elif _index.build_incomplete():
+        response["notice"] = ("The search index is incomplete because an earlier build stopped; "
+                              "results may miss mail. Call reindex to finish it.")
     return response
 
 
@@ -268,10 +276,26 @@ def _index_build_status() -> dict | None:
         if not _build or _build.get("finished"):
             return None
         done = _build.get("folders_started", 0)
-        return {"folders_started": done, "message": (
-            f"The search index is still being built ({done} folders started, began "
+        total = _build.get("folders_total")
+        folders = f"{done} of {total} folders" if total else f"{done} folders"
+        return {"folders_started": done, "folders_total": total, "message": (
+            f"The search index is still being built ({folders} started, began "
             f"{int(time.time() - _build['started'])}s ago); results may be incomplete. "
             "Try again shortly.")}
+
+
+def _last_build_error() -> str | None:
+    with _build_lock:
+        return (_build.get("outcome") or {}).get("error") if _build.get("finished") else None
+
+
+def _unbuilt_index_message() -> str:
+    error = _last_build_error()
+    if error:
+        return (f"Building the search index failed: {error}. If Thunderbird's profile was not found, "
+                "set TB_PROFILE to the profile folder; then call reindex to try again.")
+    return ("Index not built yet. Call reindex to build it in the background, "
+            "or run `tbmail reindex` in a terminal.")
 
 
 def _start_background_build(full: bool) -> dict:
@@ -289,6 +313,12 @@ def _start_background_build(full: bool) -> dict:
 
     def run() -> None:
         try:
+            try:
+                total = len(_index.discover_folders(_index.find_profile()))
+                with _build_lock:
+                    _build["folders_total"] = total
+            except Exception:
+                pass  # reindex below reports a missing profile properly.
             stats = _index.reindex(full=full, progress=progress)
             outcome = {"messages_added": stats.messages_added, "seconds": stats.seconds}
         except Exception as error:  # Reported through reindex/mail_status, not lost.
@@ -314,10 +344,14 @@ def reindex(full: bool = False, embeddings: bool = False) -> dict:
     with _build_lock:
         running = bool(_build) and not _build.get("finished")
         last = dict(_build) if _build.get("finished") else None
-    if _background_builds and (running or full or not _index.default_db_path().is_file()):
+    if _background_builds and (running or full or not _index.default_db_path().is_file()
+                               or _index.build_incomplete()):
         if embeddings:
             raise ValueError("Build the index first, then call reindex(embeddings=True)")
-        return _start_background_build(full)
+        result = _start_background_build(full)
+        if last and "error" in last["outcome"]:
+            result["previous_error"] = last["outcome"]["error"]
+        return result
     stats = _index.reindex(full=full)
     result = {"folders_indexed": stats.folders_indexed,
               "folders_unchanged": stats.folders_skipped,

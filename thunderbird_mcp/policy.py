@@ -58,11 +58,11 @@ TOOLSETS = {
         "mail_status", "list_accounts", "search_email", "search_live_email", "get_email",
         "get_thread", "get_email_reference", "list_attachments", "get_attachment_text",
         "list_folders", "reindex", "draft_email", "draft_reply", "draft_forward", "edit_draft",
-        "get_draft", "list_drafts", "discard_draft", "save_draft_to_thunderbird", "send_draft",
-        "move_emails", "undo_move", "update_email_flags",
+        "get_draft", "list_drafts", "discard_draft", "save_draft_to_thunderbird", "reconcile_draft",
+        "imap_list_folders", "send_draft", "move_emails", "undo_move", "update_email_flags",
     }),
     "organize": frozenset({
-        "imap_list_folders", "special_folders", "create_folder", "manage_folder",
+        "special_folders", "create_folder", "manage_folder",
         "organize_emails", "follow_up_candidates", "search_page",
     }),
     "export": frozenset({
@@ -78,7 +78,7 @@ TOOLSETS = {
         "save_draft_to_provider", "send_draft_via_provider",
     }),
     "admin": frozenset({
-        "list_identities", "reconcile_draft", "authentication_evidence",
+        "list_identities", "authentication_evidence",
         "oauth_setup_guide", "ocr_status",
     }),
 }

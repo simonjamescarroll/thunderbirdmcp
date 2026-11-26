@@ -20,7 +20,7 @@ Codex, OpenCode and Gemini.
   messages and the text of PDF/Office attachments. The index stays on your machine.
 - **Safe by default.** Agents get a draft-only profile: drafts are saved to
   Thunderbird's Drafts folder for you to review and send. Sending is opt-in.
-- **Lean.** The default agent sees 19 tools (about 4k tokens of context). Export,
+- **Lean.** The default agent sees 21 tools (about 4k tokens of context). Export,
   automation and provider toolsets are available when you want them.
 
 ## Start using it
@@ -31,8 +31,10 @@ thunderbird-mcp-setup --apply
 ```
 
 Setup registers the MCP with every supported client it finds and builds the search
-index from your Thunderbird profile. Restart Claude Desktop (or reload MCP in your
-agent) and ask something like *"find the latest invoice from ACME and draft a reply"*.
+index from your Thunderbird profile. Claude Desktop is found once it has been opened
+at least once; otherwise add `--clients claude-desktop`. Restart Claude Desktop (or
+reload MCP in your agent) and ask something like *"find the latest invoice from ACME
+and draft a reply"*.
 
 Searching and reading downloaded mail needs no passwords. Live IMAP search, saving
 drafts into Thunderbird and sending use account credentials stored in your system
