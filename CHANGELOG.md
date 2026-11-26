@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.5.0 — 2026-11-26
+
+Focused on first-run experience and safer, leaner agent defaults.
+
+### Changed
+
+- **The MCP server now starts as `draft-only`.** Agents can search, read, draft and
+  save drafts to Thunderbird; set `TB_MCP_PROFILE=full` to allow sending, mailbox
+  changes and exports. `tbmail` and the HTTP server keep `full`.
+- **Agents see a lean `core` toolset by default**: 21 tools (about 4k tokens of
+  schema) instead of 56 (about 10k). `TB_MCP_TOOLSETS` adds `organize`, `export`,
+  `automation`, `provider` and `admin`, or `all`. `TB_MCP_TOOLS` still overrides.
+- `get_email` returns up to 8,000 body characters by default (was 50,000);
+  `body_truncated` reports a cut and `max_body_chars` raises the limit.
+- Refreshing the local index is allowed in every profile; it never changes mail.
+
+### Added
+
+- `thunderbird-mcp-setup` registers Claude Desktop (`claude-desktop`) and builds the
+  search index once after `--apply` (`--no-index` skips it).
+- The MCP `reindex` tool builds a missing index, or a `full=True` rebuild, in the
+  background and reports progress; search explains an unbuilt, building, failed or
+  incomplete index, and an interrupted first build resumes on the next `reindex`.
+- `thunderbird-mcp --help` and `--version`.
+
 ## 0.4.1 — 2026-11-17
 
 Distribution only; the mail server and its 56 tools are unchanged from 0.4.0.

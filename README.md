@@ -1,12 +1,6 @@
-# Thunderbird MCP — email tools for Codex, Claude Code and OpenCode
+# Thunderbird MCP: search and draft your Thunderbird mail from an AI agent
 
-**Search, read, draft, send and organize your mail from an AI agent or terminal.**
-
-Thunderbird MCP is an open-source Python **email MCP server** and `tbmail` CLI.
-It combines local mail and attachment search with live IMAP/SMTP workflows,
-native Gmail API and Microsoft Graph adapters, and reusable mail references.
-The canonical project is **[simonjamescarroll/thunderbirdmcp](https://github.com/simonjamescarroll/thunderbirdmcp)**,
-released under MIT.
+**No add-on. Works with Thunderbird closed. Finds text inside PDF and Office attachments.**
 
 <!-- mcp-name: io.github.simonjamescarroll/thunderbirdmcp -->
 
@@ -17,9 +11,36 @@ released under MIT.
 [Releases](https://github.com/simonjamescarroll/thunderbirdmcp/releases) ·
 [Report your installation](https://github.com/simonjamescarroll/thunderbirdmcp/issues/new?template=installation-feedback.yml)
 
-Work with your mail from **Claude Code, Codex, OpenCode (including GLM),
-Terminalman**, or a normal shell. Available tools depend on the configured
-read-only, draft-only or full profile; `tbmail tools` shows the active catalogue.
+An open-source (MIT) MCP server and `tbmail` CLI for Claude Desktop, Claude Code,
+Codex, OpenCode and Gemini.
+
+- **Nothing to install inside Thunderbird.** It reads the mail Thunderbird has
+  already downloaded, so Thunderbird updates and add-on restrictions cannot break it.
+- **Finds what Thunderbird search misses.** Keyword and local semantic search over
+  messages and the text of PDF/Office attachments. The index stays on your machine.
+- **Safe by default.** Agents get a draft-only profile: drafts are saved to
+  Thunderbird's Drafts folder for you to review and send. Sending is opt-in.
+- **Lean.** The default agent sees 21 tools (about 4k tokens of context). Export,
+  automation and provider toolsets are available when you want them.
+
+## Start using it
+
+```bash
+uv tool install --python 3.12 thunderbird-mcp
+thunderbird-mcp-setup --apply
+```
+
+Setup registers the MCP with every supported client it finds and builds the search
+index from your Thunderbird profile. Claude Desktop is found once it has been opened
+at least once; otherwise add `--clients claude-desktop`. Restart Claude Desktop (or
+reload MCP in your agent) and ask something like *"find the latest invoice from ACME
+and draft a reply"*.
+
+Searching and reading downloaded mail needs no passwords. Live IMAP search, saving
+drafts into Thunderbird and sending use account credentials stored in your system
+keyring; the [installation guide](docs/installation.md#connect-credentials-and-check-the-account) sets them up.
+To let an agent send or reorganize mail, set `TB_MCP_PROFILE=full`; to expose more
+tools, set `TB_MCP_TOOLSETS` (see [profiles and toolsets](#profiles-and-toolsets)).
 
 | Workflow | Available now |
 | --- | --- |
@@ -31,43 +52,22 @@ read-only, draft-only or full profile; `tbmail tools` shows the active catalogue
 | Accounts and access | Multiple accounts, BYO OAuth enrollment, enforced tool profiles/allowlists and optional authenticated Streamable HTTP. |
 | Thunderbird desktop | Contacts, calendars, tasks, filters and settings through the separate [pinned native companion](docs/native-integration.md). |
 
-Mail credentials stay in the system keyring. Local indexing and document
-extraction run on your machine; content returned to a hosted AI client goes to
-that client's model provider. The demo below
-shows one workflow: finding a PDF invoice, reusing its reference, and preparing
-an unsent reply.
+Local indexing and document extraction run on your machine; content returned to a
+hosted AI client goes to that client's model provider. The demo shows one workflow:
+finding a PDF invoice, reusing its reference, and preparing an unsent reply.
 
 ![Synthetic demo: search an invoice attachment, reuse a mail reference, and prepare an unsent reply](https://raw.githubusercontent.com/simonjamescarroll/thunderbirdmcp/main/docs/demo.svg)
 
-## Start using it
-
-Install from [PyPI](https://pypi.org/project/thunderbird-mcp/) and register the MCP
-with your installed clients:
-
-```bash
-uv tool install --python 3.12 thunderbird-mcp
-thunderbird-mcp-setup --apply
-```
-
-To try the synthetic demo or work on the code, use a checkout instead.
+### Try it without your mailbox
 
 You need Python 3.10+ and [uv](https://docs.astral.sh/uv/getting-started/installation/).
-Clone the project and try the demo before connecting your mailbox:
+The demo uses temporary synthetic mail and needs no credentials or AI model:
 
 ```bash
 git clone https://github.com/simonjamescarroll/thunderbirdmcp.git ~/projects/thunderbirdmcp
 cd ~/projects/thunderbirdmcp
 uv sync --locked
 uv run python scripts/demo.py
-```
-
-The demo uses temporary synthetic mail and an invoice PDF. It prepares an unsent
-reply; it needs no mail credentials or AI model. To use your own mailbox,
-configure Thunderbird to download messages (mbox or Maildir), then run:
-
-```bash
-uv run thunderbird-mcp-index
-uv run thunderbird-mcp-setup --apply
 ```
 
 The [installation guide](docs/installation.md) covers credentials, custom profiles,
@@ -81,8 +81,9 @@ Setup installs `tbmail`, `thunderbird-mail`, `thunderbird-mcp`,
 in `~/.local/bin` on Linux/macOS. Windows uses native
 launchers under `%LOCALAPPDATA%\thunderbird-mcp\bin` and direct Python commands
 for MCP clients. Setup registers the MCP in the global
-configuration of installed Claude Code, Codex, OpenCode, Antigravity, and Gemini
-CLI clients.
+configuration of installed Claude Desktop, Claude Code, Codex, OpenCode,
+Antigravity, and Gemini CLI clients, then builds the search index once
+(`--no-index` skips that step).
 Use `--clients claude codex` to select clients, or `--clients none` to install
 only commands. Run setup without `--apply` to inspect changes. Existing settings
 are preserved and changed files receive private timestamped backups. Repeating
@@ -97,6 +98,7 @@ Setup uses these default client configuration files:
 
 | Client (`--clients` name) | Global configuration |
 | --- | --- |
+| Claude Desktop (`claude-desktop`) | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS), `%APPDATA%\Claude\claude_desktop_config.json` (Windows), `~/.config/Claude/claude_desktop_config.json` (Linux) |
 | Claude Code (`claude`) | `~/.claude.json` |
 | Codex (`codex`) | `~/.codex/config.toml` |
 | OpenCode, including GLM (`opencode`) | `~/.config/opencode/opencode.jsonc` if present, otherwise `opencode.json` in the same directory |
@@ -313,9 +315,25 @@ messages. An optional authenticated Streamable HTTP entrypoint provides explicit
 principal/account/file boundaries; deployment and credentials are configured
 separately. It is not a hosted ChatGPT connector.
 
-Set `TB_MCP_PROFILE=read-only` or `draft-only` to restrict effects; `full` preserves
-the complete interface. `TB_MCP_TOOLS` selects an explicit tool allowlist.
-Restrictions apply at dispatch and operation boundaries, including background
+### Profiles and toolsets
+
+The MCP server starts as `TB_MCP_PROFILE=draft-only` with `TB_MCP_TOOLSETS=core`:
+agents can search, read, prepare drafts and save them to Thunderbird, but cannot
+send, move or export. Set these in the client's MCP environment to change that.
+
+| Setting | Effect |
+| --- | --- |
+| `TB_MCP_PROFILE=read-only` | Search, read and refresh the index. |
+| `TB_MCP_PROFILE=draft-only` | Default. Adds drafting and saving drafts to Thunderbird. |
+| `TB_MCP_PROFILE=full` | Adds sending, mailbox changes and file exports. |
+| `TB_MCP_TOOLSETS=core` | Default. Search, read, attachments, drafts and, with `full`, send/move/flags. |
+| `TB_MCP_TOOLSETS=core,organize,export` | Adds folder management and triage, or exports. Others: `automation` (scheduled send, events, operations, `send_email`), `provider` (Gmail/Graph), `admin` (identities, OAuth/OCR diagnostics). |
+| `TB_MCP_TOOLSETS=all` | Every tool. |
+| `TB_MCP_TOOLS=a,b` | Explicit allowlist; overrides toolsets. |
+
+Profiles are enforced at dispatch; toolsets only decide which tools an agent sees
+and can call. `tbmail`, your own terminal CLI, keeps every tool and the `full`
+profile unless you set these variables. Restrictions apply at dispatch and operation boundaries, including background
 delivery. Live references use `organize_emails`; the older `move_emails` path
 continues to accept indexed IDs. Contacts/calendars/settings are supplied by
 the [optional native companion](docs/native-integration.md), which has its own
@@ -429,7 +447,7 @@ Environment overrides:
 | Variable | Meaning |
 | --- | --- |
 | `TB_PROFILE`, `TB_ACCOUNT` | Thunderbird profile path and account ID |
-| `TB_MCP_PROFILE`, `TB_MCP_TOOLS` | Enforced read-only/draft-only/full effects and optional tool allowlist |
+| `TB_MCP_PROFILE`, `TB_MCP_TOOLSETS`, `TB_MCP_TOOLS` | Enforced read-only/draft-only/full effects (MCP default `draft-only`), visible toolsets (MCP default `core`) and optional tool allowlist |
 | `TB_MCP_ACCOUNTS`, `TB_MCP_FILE_ROOTS` | Optional account and file access restrictions |
 | `TB_MAIL_INDEX_DB` | Index path; checkout default `mail-index.sqlite`, installed-package default in the user data directory ([paths](docs/installation.md#data-and-configuration-paths)) |
 | `TB_OUTBOX_DB` | Draft/delivery database; default beside the index |

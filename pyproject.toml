@@ -1,6 +1,6 @@
 [project]
 name = "thunderbird-mcp"
-version = "0.4.1"
+version = "0.5.0"
 description = "Thunderbird email MCP for search, attachments, drafts, sending and mailbox automation"
 readme = "README.md"
 requires-python = ">=3.10"

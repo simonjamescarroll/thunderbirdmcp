@@ -17,9 +17,10 @@ Set these variables in the MCP server or service environment:
 
 | Variable | Meaning |
 | --- | --- |
-| `TB_MCP_PROFILE=read-only` | Search, read, references, evidence, events and status. No draft, mailbox, export or delivery effects. |
-| `TB_MCP_PROFILE=draft-only` | Read plus local drafting/editing and unsent server-draft handoff. No delivery or ordinary mailbox changes. |
-| `TB_MCP_PROFILE=full` | All capabilities; the default for backwards compatibility. |
+| `TB_MCP_PROFILE=read-only` | Search, read, references, evidence, events, status and local index refresh. No draft, mailbox, export or delivery effects. |
+| `TB_MCP_PROFILE=draft-only` | Read plus local drafting/editing and unsent server-draft handoff. No delivery or ordinary mailbox changes. The MCP server's default. |
+| `TB_MCP_PROFILE=full` | All capabilities; the default for `tbmail` and the HTTP server. |
+| `TB_MCP_TOOLSETS=core` | The MCP server's default visible tools. Add `organize`, `export`, `automation`, `provider` or `admin`, or use `all`. |
 | `TB_MCP_TOOLS=search_email,get_email,get_email_reference` | Optional comma-separated tool allowlist; an empty value allows no tools. |
 | `TB_MCP_ACCOUNTS=account1` | Optional explicit account boundary. Single-account tools resolve that account; mixed-account access fails closed. |
 | `TB_MCP_FILE_ROOTS=/absolute/export:/absolute/attachments` | Optional source-attachment and export roots, separated by the platform path separator. |

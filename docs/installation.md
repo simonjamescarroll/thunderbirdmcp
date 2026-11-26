@@ -50,15 +50,17 @@ Keep this checkout and its virtual environment in place: the generated commands
 use their absolute paths. If you move the checkout, run setup again. The demo
 does not read your real profile, alter client configuration, or send mail.
 
-Setup chooses installed clients automatically. To select clients explicitly:
+Setup chooses installed clients automatically, including Claude Desktop when its
+settings folder exists. To select clients explicitly:
 
 ```bash
-uv run thunderbird-mcp-setup --clients claude codex opencode
-uv run thunderbird-mcp-setup --clients claude codex opencode --apply
+uv run thunderbird-mcp-setup --clients claude-desktop claude codex opencode
+uv run thunderbird-mcp-setup --clients claude-desktop claude codex opencode --apply
 ```
 
 The first command previews the change. The second writes it, preserving unrelated
-settings and keeping private backups. `--clients none --apply` installs just the
+settings and keeping private backups, then builds the search index once if none
+exists (`--no-index` skips this). Quit and reopen Claude Desktop afterwards. `--clients none --apply` installs just the
 terminal commands. If `tbmail` is not on your shell's PATH, use
 `~/.local/bin/tbmail`, add `~/.local/bin` to PATH, or use `uv run tbmail` inside
 the checkout. MCP registrations use an absolute command and do not depend on PATH.

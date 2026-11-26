@@ -56,8 +56,9 @@ access. Local storage does not make a hosted model session offline.
 ## Can I use it in read-only mode?
 
 Yes. Set `TB_MCP_PROFILE=read-only` in the server environment. `draft-only` adds
-draft preparation/editing and unsent draft handoff; `full` is the default for
-compatibility. Tool allowlists, account restrictions and file roots are also
+draft preparation/editing and unsent draft handoff and is the MCP server's
+default; `full` adds sending, mailbox changes and exports. `TB_MCP_TOOLSETS`
+controls which tools an agent sees (default `core`). Tool allowlists, account restrictions and file roots are also
 available. These are enforced restrictions, including for scheduled work;
 read/write annotations alone are not the access control.
 

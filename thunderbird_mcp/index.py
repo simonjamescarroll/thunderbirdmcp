@@ -424,9 +424,14 @@ def reindex(
     folders = discover_folders(profile)
     stats = IndexStats()
 
+    # Folders commit one at a time, so an interrupted first build leaves a
+    # usable but partial index. Mark it until a run finishes every folder.
+    fresh = not Path(db_path or default_db_path()).expanduser().is_file()
     conn = connect(db_path)
     try:
         maildir.ensure_schema(conn)
+        if fresh:
+            conn.execute("INSERT OR REPLACE INTO index_meta(key,value) VALUES ('build_incomplete',1)")
         conn.commit()
         seen = {row["folder"]: row for row in conn.execute("SELECT * FROM folders")}
 
@@ -525,12 +530,28 @@ def reindex(
                 conn.execute("DELETE FROM maildir_entries WHERE folder=?", (row[0],))
                 conn.execute("DELETE FROM maildir_folders WHERE folder=?", (row[0],))
         conn.execute("UPDATE folders SET count=(SELECT count(*) FROM emails WHERE emails.folder=folders.folder)")
+        if not stats.folders_deferred:
+            conn.execute("DELETE FROM index_meta WHERE key='build_incomplete'")
         conn.commit()
     finally:
         conn.close()
 
     stats.seconds = round(time.time() - started, 1)
     return stats
+
+
+def build_incomplete(db_path: Path | None = None) -> bool:
+    """Whether an existing index is from a first build that has not finished."""
+    path = Path(db_path or default_db_path()).expanduser()
+    if not path.is_file():
+        return False
+    conn = connect(path, read_only=True)
+    try:
+        return conn.execute("SELECT 1 FROM index_meta WHERE key='build_incomplete'").fetchone() is not None
+    except sqlite3.Error:
+        return False
+    finally:
+        conn.close()
 
 
 def cli() -> None:
