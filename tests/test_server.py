@@ -79,6 +79,69 @@ class ReplyRecipientsTests(unittest.TestCase):
         read.assert_called_once_with(reference=f"thunderbird://imap/account1/fingerprint/{folder}/11/22")
 
 
+class ToolsetTests(unittest.TestCase):
+    def test_every_registered_tool_belongs_to_a_toolset(self):
+        from thunderbird_mcp import policy, server
+        grouped = set().union(*policy.TOOLSETS.values())
+        self.assertEqual(set(server.mcp._policy_capabilities) - grouped, set())
+
+    def test_toolsets_narrow_discovery_and_dispatch_but_not_explicit_allowlists(self):
+        from thunderbird_mcp import policy, server
+
+        base = {key: value for key, value in os.environ.items() if not key.startswith("TB_MCP_")}
+
+        def listed(**env):
+            with patch.dict(os.environ, {**base, "TB_MCP_PROFILE": "full", **env}, clear=True):
+                return {tool.name for tool in asyncio.run(server.mcp.list_tools())}
+
+        everything = listed()
+        core = listed(TB_MCP_TOOLSETS="core")
+        self.assertEqual(core, set(policy.TOOLSETS["core"]))
+        self.assertEqual(listed(TB_MCP_TOOLSETS="core,export"), core | policy.TOOLSETS["export"])
+        self.assertEqual(listed(TB_MCP_TOOLSETS="all"), everything)
+        self.assertEqual(listed(TB_MCP_TOOLSETS="core", TB_MCP_TOOLS="plan_export"), {"plan_export"})
+        with patch.dict(os.environ, {**base, "TB_MCP_PROFILE": "full", "TB_MCP_TOOLSETS": "core"}, clear=True), \
+                self.assertRaises(policy.PolicyError):
+            asyncio.run(server.mcp.call_tool("plan_export", {"items": [], "directory": "/tmp"}))
+        with patch.dict(os.environ, {"TB_MCP_TOOLSETS": "core,typo"}), self.assertRaises(ValueError):
+            policy.enabled_toolsets()
+
+
+class BackgroundIndexTests(unittest.TestCase):
+    def test_first_build_runs_in_background_and_search_explains_state(self):
+        import time
+        from thunderbird_mcp import server
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            folder = root / "profile" / "ImapMail" / "mail.example.test"
+            folder.mkdir(parents=True)
+            message = EmailMessage()
+            message["From"], message["To"] = "a@example.test", "b@example.test"
+            message["Subject"], message["Message-ID"] = "Background build", "<bg@example.test>"
+            message.set_content("Quokka ledger")
+            box = mailbox.mbox(folder / "INBOX")
+            box.add(message)
+            box.close()
+            (folder / "INBOX.msf").touch()
+            env = {key: value for key, value in os.environ.items() if not key.startswith("TB_")}
+            env.update(TB_PROFILE=str(root / "profile"), TB_MAIL_INDEX_DB=str(root / "index.sqlite"),
+                       TB_MCP_PROFILE="draft-only")
+            with patch.dict(os.environ, env, clear=True), patch.dict(server._build, clear=True), \
+                    patch.object(server, "_background_builds", True):
+                missing = server.search_email("quokka", semantic=False)
+                self.assertIn("Call reindex", missing["error"])
+                self.assertEqual(server.reindex()["status"], "started")
+                for _ in range(200):
+                    if server._build.get("finished"):
+                        break
+                    time.sleep(0.05)
+                self.assertNotIn("error", server._build["outcome"])
+                self.assertEqual(server.search_email("quokka", semantic=False)["count"], 1)
+                refreshed = server.reindex()
+                self.assertEqual(refreshed["last_background_build"]["messages_added"], 1)
+                self.assertEqual(refreshed["messages_added"], 0)
+
+
 class MCPProtocolTests(unittest.IsolatedAsyncioTestCase):
     async def test_profiles_hide_and_reject_disallowed_protocol_tools(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -158,11 +221,13 @@ class MCPProtocolTests(unittest.IsolatedAsyncioTestCase):
                     initialization = await session.initialize()
                     self.assertEqual(initialization.serverInfo.name, "thunderbird")
                     tools = {tool.name: tool for tool in (await session.list_tools()).tools}
-                    self.assertTrue({"search_email", "draft_reply", "send_draft", "get_email_reference",
-                                     "get_thread", "mail_status", "export_attachment", "search_live_email",
+                    self.assertTrue({"search_email", "draft_reply", "get_email_reference", "reindex",
+                                     "get_thread", "mail_status", "search_live_email",
                                      "list_accounts", "get_attachment_text", "save_draft_to_thunderbird"} <= set(tools))
+                    # The default agent surface is draft-only and lean.
+                    self.assertFalse({"send_draft", "send_email", "move_emails", "export_attachment"} & set(tools))
+                    self.assertLessEqual(len(tools), 20)
                     self.assertTrue(tools["search_email"].annotations.readOnlyHint)
-                    self.assertFalse(tools["send_draft"].annotations.readOnlyHint)
                     self.assertFalse(tools["save_draft_to_thunderbird"].annotations.readOnlyHint)
                     self.assertTrue(tools["save_draft_to_thunderbird"].annotations.openWorldHint)
                     self.assertTrue(tools["search_live_email"].annotations.readOnlyHint)

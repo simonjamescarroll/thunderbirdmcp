@@ -20,7 +20,9 @@ class PolicyTests(unittest.TestCase):
     def test_profiles_and_empty_allowlist(self):
         with patch.dict(os.environ, TB_MCP_PROFILE="read-only"):
             policy.require("read", tool="get_email")
-            for capability in policy.CAPABILITIES - {"read"}:
+            # Refreshing the local search index never changes mail.
+            policy.require("index", tool="reindex")
+            for capability in policy.CAPABILITIES - {"read", "index"}:
                 with self.subTest(capability=capability), self.assertRaises(policy.PolicyError):
                     policy.require(capability, tool="send_draft")
         with patch.dict(os.environ, TB_MCP_PROFILE="draft-only"):

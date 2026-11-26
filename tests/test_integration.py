@@ -141,6 +141,26 @@ command = "keep"
             plan = setup.build_plan(home=self.home, project=self.project, python=Path(sys.executable))
         self.assertEqual([x["name"] for x in plan["report"]["clients"]], ["claude", "agy"])
 
+    def test_claude_desktop_is_detected_by_its_settings_directory(self):
+        desktop = setup._claude_desktop_dir(self.home, use_env=False)
+        desktop.mkdir(parents=True)
+        with patch("thunderbird_mcp.setup.shutil.which", return_value=None):
+            plan = setup.build_plan(home=self.home, project=self.project, python=Path(sys.executable))
+        self.assertEqual([x["name"] for x in plan["report"]["clients"]], ["claude-desktop"])
+        setup.apply_plan(plan)
+        entry = json.loads((desktop / "claude_desktop_config.json").read_text())["mcpServers"]["thunderbird"]
+        self.assertTrue(entry["command"].endswith("thunderbird-mcp"))
+        self.assertNotIn("type", entry)
+        self.assertTrue(any("Claude Desktop" in note for note in plan["report"]["notes"]))
+
+    def test_initial_index_is_skipped_with_guidance_when_no_profile_exists(self):
+        with patch.dict(os.environ, {"TB_PROFILE": str(self.root / "missing"),
+                                     "TB_MAIL_INDEX_DB": str(self.root / "index.sqlite")}):
+            result = setup.build_initial_index()
+        self.assertEqual(result["status"], "skipped")
+        self.assertIn("tbmail reindex", result["next"])
+        self.assertFalse((self.root / "index.sqlite").exists())
+
     def test_installed_package_uses_running_interpreter_without_checkout_venv(self):
         with patch.object(setup, "__file__", str(self.project / "thunderbird_mcp/setup.py")):
             plan = setup.build_plan(home=self.home, clients=["claude"])

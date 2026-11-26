@@ -22,7 +22,7 @@ from typing import Any
 
 import tomlkit
 
-CLIENTS = ("claude", "codex", "opencode", "agy", "gemini")
+CLIENTS = ("claude", "claude-desktop", "codex", "opencode", "agy", "gemini")
 SERVER_NAME = "thunderbird"
 
 
@@ -178,8 +178,26 @@ def _installed_entrypoint(path: Path, python: Path, module: str) -> bool:
         return False
 
 
+def _claude_desktop_dir(home: Path, use_env: bool) -> Path:
+    env = os.environ if use_env else {}
+    if sys.platform == "darwin":
+        return home / "Library/Application Support/Claude"
+    if sys.platform == "win32":
+        return Path(env.get("APPDATA", home / "AppData/Roaming")) / "Claude"
+    return Path(env.get("XDG_CONFIG_HOME", home / ".config")) / "Claude"
+
+
+def _detected(client: str, home: Path, use_env: bool) -> bool:
+    # The desktop app has no command on PATH; its settings directory marks it.
+    if client == "claude-desktop":
+        return _claude_desktop_dir(home, use_env).is_dir()
+    return bool(shutil.which(client))
+
+
 def _client_path(client: str, home: Path, use_env: bool) -> Path:
     env = os.environ if use_env else {}
+    if client == "claude-desktop":
+        return _claude_desktop_dir(home, use_env) / "claude_desktop_config.json"
     if client == "claude":
         override = env.get("CLAUDE_CONFIG_DIR")
         return Path(override) / ".claude.json" if override else home / ".claude.json"
@@ -270,7 +288,7 @@ def build_plan(
     if not (project / "thunderbird_mcp/server.py").is_file():
         raise ValueError(f"Thunderbird MCP source was not found in {project}")
     if clients is None:
-        clients = [client for client in CLIENTS if shutil.which(client)]
+        clients = [client for client in CLIENTS if _detected(client, home, use_env)]
     unknown = sorted(set(clients) - set(CLIENTS))
     if unknown:
         raise ValueError("Unknown clients: " + ", ".join(unknown))
@@ -307,8 +325,10 @@ def build_plan(
         raw = before.decode("utf-8") if before is not None else ("" if client == "codex" else "{}\n")
         result, notes = _client_update(client, raw, command, command_args)
         add(path, result, 0o600, "client")
-        report["clients"].append({"name": client, "path": str(path), "installed": bool(shutil.which(client))})
+        report["clients"].append({"name": client, "path": str(path), "installed": _detected(client, home, use_env)})
         report["notes"].extend(notes)
+        if client == "claude-desktop":
+            report["notes"].append("Quit and reopen Claude Desktop to load Thunderbird.")
     if str(bin_dir) not in os.environ.get("PATH", "").split(os.pathsep):
         report["notes"].append(f"Add {bin_dir} to PATH to run tbmail by name; MCP uses an absolute command.")
     report["notes"].append("Reconnect or reload MCP in an existing agent session after setup; restart it if the client cannot reload. Use tbmail immediately from shell tools. See https://github.com/simonjamescarroll/thunderbirdmcp#reload-an-existing-session.")
@@ -355,6 +375,22 @@ def apply_plan(plan: dict) -> dict:
     return report
 
 
+def build_initial_index() -> dict:
+    """Build the search index once at install time, where progress is visible
+    and no MCP tool timeout applies. Later runs only parse changed folders."""
+    from . import index
+    if index.default_db_path().is_file():
+        return {"status": "exists", "path": str(index.default_db_path())}
+    try:
+        print("Building the local search index from Thunderbird's downloaded mail...", file=sys.stderr)
+        stats = index.reindex(progress=lambda line: print("  " + line, file=sys.stderr))
+    except (OSError, RuntimeError, ValueError) as error:
+        return {"status": "skipped", "reason": str(error),
+                "next": "Set TB_PROFILE to your Thunderbird profile, then run tbmail reindex."}
+    return {"status": "built", "folders": stats.folders_indexed,
+            "messages": stats.messages_added, "seconds": stats.seconds}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true", help="Install commands and register selected clients (default: preview)")
@@ -362,12 +398,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--home", type=Path, help="Alternate user home, useful for preview/testing")
     parser.add_argument("--project", type=Path, help="Optional source checkout; installed packages use their own interpreter")
     parser.add_argument("--python", type=Path, help="Override the selected Python interpreter")
+    parser.add_argument("--no-index", action="store_true", help="Skip building the local search index after --apply")
     args = parser.parse_args(argv)
     if args.clients and "none" in args.clients and len(args.clients) > 1:
         parser.error("--clients none cannot be combined with client names")
     try:
         plan = build_plan(project=args.project, home=args.home, python=args.python, clients=[] if args.clients == ["none"] else args.clients)
         report = apply_plan(plan) if args.apply else {**plan["report"], "applied": False}
+        if args.apply and not args.no_index:
+            report["index"] = build_initial_index()
         print(json.dumps(report, indent=2, ensure_ascii=False))
         return 0
     except (ValueError, RuntimeError, OSError) as error:

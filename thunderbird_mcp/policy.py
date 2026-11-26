@@ -23,8 +23,9 @@ from mcp.server.fastmcp import FastMCP
 
 CAPABILITIES = frozenset({"read", "draft", "mail-write", "send", "file-write", "index", "configure"})
 PROFILES = {
-    "read-only": frozenset({"read"}),
-    "draft-only": frozenset({"read", "draft"}),
+    # Indexing only refreshes the local search database, never mail itself.
+    "read-only": frozenset({"read", "index"}),
+    "draft-only": frozenset({"read", "draft", "index"}),
     "full": CAPABILITIES,
 }
 TOOL_CAPABILITIES = {
@@ -47,6 +48,60 @@ TOOL_CAPABILITIES = {
     "save_draft_to_provider": "draft", "send_draft_via_provider": "send",
     "oauth_setup_guide": "read", "ocr_status": "read",
 }
+
+
+# Every tool schema costs context on each request and dilutes tool choice. The
+# stdio server defaults TB_MCP_TOOLSETS to "core"; unset means every tool.
+# Toolsets shape the visible surface; profiles remain the security boundary.
+TOOLSETS = {
+    "core": frozenset({
+        "mail_status", "list_accounts", "search_email", "search_live_email", "get_email",
+        "get_thread", "get_email_reference", "list_attachments", "get_attachment_text",
+        "list_folders", "reindex", "draft_email", "draft_reply", "draft_forward", "edit_draft",
+        "get_draft", "list_drafts", "discard_draft", "save_draft_to_thunderbird", "send_draft",
+        "move_emails", "undo_move", "update_email_flags",
+    }),
+    "organize": frozenset({
+        "imap_list_folders", "special_folders", "create_folder", "manage_folder",
+        "organize_emails", "follow_up_candidates", "search_page",
+    }),
+    "export": frozenset({
+        "export_email", "export_attachment", "plan_export", "execute_export", "recover_export",
+    }),
+    "automation": frozenset({
+        "send_email", "schedule_draft", "cancel_schedule", "get_schedule", "list_schedules",
+        "run_scheduled", "watch_mail", "list_mail_events", "get_operation", "list_operations",
+        "cancel_operation",
+    }),
+    "provider": frozenset({
+        "provider_search", "provider_labels", "provider_update_labels",
+        "save_draft_to_provider", "send_draft_via_provider",
+    }),
+    "admin": frozenset({
+        "list_identities", "reconcile_draft", "authentication_evidence",
+        "oauth_setup_guide", "ocr_status",
+    }),
+}
+
+
+def enabled_toolsets() -> frozenset[str] | None:
+    """Return the selected toolsets, or None when every tool is exposed."""
+    selected = _csv(os.environ.get("TB_MCP_TOOLSETS"))
+    if selected is None or "all" in selected:
+        return None
+    unknown = selected - set(TOOLSETS)
+    if unknown:
+        raise ValueError("Unknown TB_MCP_TOOLSETS: " + ", ".join(sorted(unknown))
+                         + "; choose from all, " + ", ".join(TOOLSETS))
+    return selected | {"core"}
+
+
+def exposed(tool: str) -> bool:
+    """Whether MCP discovery offers a tool. An explicit TB_MCP_TOOLS list wins."""
+    selected = enabled_toolsets()
+    if selected is None or current().tools is not None:
+        return True
+    return any(tool in TOOLSETS[name] for name in selected)
 
 
 class PolicyError(PermissionError):
@@ -323,9 +378,11 @@ class PolicyFastMCP(FastMCP):
 
     async def list_tools(self):
         return [tool for tool in await super().list_tools()
-                if allowed(tool.name, self._policy_capabilities.get(tool.name))]
+                if exposed(tool.name) and allowed(tool.name, self._policy_capabilities.get(tool.name))]
 
     async def call_tool(self, name, arguments):
+        if not exposed(name):
+            raise PolicyError(f"{name} is not in the enabled TB_MCP_TOOLSETS; add its toolset or use all")
         _require_tool(current(), self._policy_capabilities.get(name, "mail-write"), name)
         return await super().call_tool(name, arguments)
 
