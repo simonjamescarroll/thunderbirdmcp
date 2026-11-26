@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-11-26
 
 Focused on first-run experience and safer, leaner agent defaults.
 
