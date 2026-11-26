@@ -11,6 +11,7 @@ released under MIT.
 <!-- mcp-name: io.github.simonjamescarroll/thunderbirdmcp -->
 
 [![Mail MCP checks](https://github.com/simonjamescarroll/thunderbirdmcp/actions/workflows/checks.yml/badge.svg)](https://github.com/simonjamescarroll/thunderbirdmcp/actions/workflows/checks.yml)
+[![simonjamescarroll/thunderbirdmcp MCP server](https://glama.ai/mcp/servers/simonjamescarroll/thunderbirdmcp/badges/score.svg)](https://glama.ai/mcp/servers/simonjamescarroll/thunderbirdmcp)
 [Quick start](#start-using-it) · [Demo](docs/demo.md) · [Installation guide](docs/installation.md) ·
 [Workflows](docs/workflows.md) · [FAQ](docs/faq.md) · [Comparison](docs/comparison.md) ·
 [Releases](https://github.com/simonjamescarroll/thunderbirdmcp/releases) ·
